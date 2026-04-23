@@ -1,0 +1,65 @@
+-- =============================================================================
+-- TASK 8: dbt-style Incremental Revenue Snapshot (Simulated)
+-- =============================================================================
+--
+-- CONTEXT:
+-- As part of the migration, you'll be working with dbt models. Many dbt models
+-- use incremental logic to avoid reprocessing the full table. This task simulates
+-- what happens inside a dbt incremental model: you need to merge new data into
+-- an existing snapshot by writing a query that combines historical data with a
+-- fresh batch, deduplicating and picking the latest version of each record.
+--
+-- SCHEMA:
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ revenue_snapshot (the existing "target" table — already materialized)  │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ account_id         │ INT            │ References accounts              │
+-- │ product_id         │ INT            │ References products              │
+-- │ month              │ DATE           │ First day of the month           │
+-- │ mrr_usd            │ DECIMAL(10,2)  │ Monthly recurring revenue        │
+-- │ license_count      │ INT            │ Active licenses in that month    │
+-- │ snapshot_ts        │ TIMESTAMP      │ When the row was loaded          │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ revenue_staging (the new "source" batch — raw data from upstream)      │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ account_id         │ INT            │ References accounts              │
+-- │ product_id         │ INT            │ References products              │
+-- │ month              │ DATE           │ First day of the month           │
+-- │ mrr_usd            │ DECIMAL(10,2)  │ Monthly recurring revenue        │
+-- │ license_count      │ INT            │ Active licenses in that month    │
+-- │ loaded_at          │ TIMESTAMP      │ When the staging row arrived     │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- SAMPLE ROWS:
+-- revenue_snapshot (already contains data through 2025-01):
+--   (10, 1, '2025-01-01', 1250.00, 5, '2025-02-01 03:00:00')
+--   (10, 2, '2025-01-01',  350.00, 2, '2025-02-01 03:00:00')
+--   (11, 1, '2025-01-01',  499.00, 1, '2025-02-01 03:00:00')
+--
+-- revenue_staging (new data for 2025-02, plus corrections to 2025-01):
+--   (10, 1, '2025-01-01', 1300.00, 5, '2025-03-01 03:00:00') -- corrected Jan
+--   (10, 1, '2025-02-01', 1300.00, 5, '2025-03-01 03:00:00') -- new Feb
+--   (10, 2, '2025-02-01',  350.00, 2, '2025-03-01 03:00:00') -- new Feb
+--   (11, 1, '2025-02-01',  499.00, 1, '2025-03-01 03:00:00') -- new Feb
+--
+-- TASK:
+-- Write a single SELECT query (no INSERT/UPDATE) that produces the correct
+-- merged view of the data. The logic should be:
+--   1. Combine both tables
+--   2. For each (account_id, product_id, month) group, keep only the row
+--      with the latest timestamp (snapshot_ts or loaded_at)
+--   3. If the staging table has a corrected value for an existing row,
+--      the staging version should win
+--
+-- Return: account_id, product_id, month, mrr_usd, license_count, latest_ts
+-- Order by account_id, product_id, month
+--
+-- BONUS: Also write a query that identifies which rows in the staging table
+-- are "corrections" (same key exists in snapshot but values differ) vs
+-- truly "new" rows (key does not exist in snapshot).
+-- =============================================================================
+
+-- YOUR SOLUTION BELOW:
+

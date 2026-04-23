@@ -1,0 +1,83 @@
+-- =============================================================================
+-- TASK 9: Cross-Team KPI Summary (UNION + Pivoting)
+-- =============================================================================
+--
+-- CONTEXT:
+-- Leadership uses a single "KPI Scorecard" Power BI report that pulls metrics
+-- from multiple teams into one view. For the Tableau migration, you need to
+-- unify data from different team tables into a single long-format dataset
+-- that Tableau can pivot. Each team stores their KPIs differently.
+--
+-- SCHEMA:
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ sales_kpis                                                             │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ month              │ DATE           │ First day of the month           │
+-- │ region             │ VARCHAR(30)    │ 'EMEA', 'APAC', 'Americas'      │
+-- │ new_arr_usd        │ DECIMAL(12,2)  │ New Annual Recurring Revenue     │
+-- │ expansion_arr_usd  │ DECIMAL(12,2)  │ Expansion ARR                    │
+-- │ churned_arr_usd    │ DECIMAL(12,2)  │ Churned ARR (positive number)    │
+-- │ deals_closed       │ INT            │ Number of deals closed           │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ marketing_kpis                                                         │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ month              │ DATE           │ First day of the month           │
+-- │ channel            │ VARCHAR(50)    │ 'organic', 'paid_search',        │
+-- │                    │                │ 'social', 'email', 'referral'    │
+-- │ website_visits     │ INT            │ Total visits from this channel   │
+-- │ trial_starts       │ INT            │ Trial activations                │
+-- │ mqls               │ INT            │ Marketing Qualified Leads        │
+-- │ spend_usd          │ DECIMAL(10,2)  │ Marketing spend                  │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ support_kpis                                                           │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ month              │ DATE           │ First day of the month           │
+-- │ product_name       │ VARCHAR(100)   │ Product name                     │
+-- │ tickets_created    │ INT            │ New tickets that month           │
+-- │ tickets_resolved   │ INT            │ Tickets resolved that month      │
+-- │ avg_resolution_hrs │ DECIMAL(6,1)   │ Average resolution time          │
+-- │ csat_score         │ DECIMAL(3,2)   │ Customer satisfaction (0–1)      │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- SAMPLE ROWS:
+-- sales_kpis:
+--   ('2025-01-01', 'EMEA', 320000.00, 85000.00, 42000.00, 45)
+--
+-- marketing_kpis:
+--   ('2025-01-01', 'paid_search', 150000, 2200, 680, 45000.00)
+--
+-- support_kpis:
+--   ('2025-01-01', 'IntelliJ IDEA', 1250, 1180, 18.5, 0.87)
+--
+-- TASK:
+-- Part A — Long-format KPI dataset:
+-- Create a unified dataset with this structure:
+--   - month (DATE)
+--   - team (VARCHAR): 'Sales', 'Marketing', 'Support'
+--   - dimension (VARCHAR): the granularity column (region/channel/product_name)
+--   - kpi_name (VARCHAR): name of the metric
+--   - kpi_value (DECIMAL): the numeric value
+--
+-- Use UNION ALL to stack the three tables. Unpivot each table's metric columns
+-- into (kpi_name, kpi_value) rows. For example, sales_kpis should produce
+-- 4 rows per (month, region): one for new_arr, expansion_arr, churned_arr,
+-- deals_closed.
+--
+-- Part B — Monthly executive summary:
+-- From the unified dataset, produce a single row per month with:
+--   - month
+--   - total_net_new_arr (new_arr - churned_arr, summed across regions)
+--   - total_trial_starts (summed across channels)
+--   - overall_csat (average csat across products, rounded to 2 decimals)
+--   - cost_per_trial (total marketing spend / total trial_starts, rounded to 2)
+--
+-- Order Part A by team, month, dimension, kpi_name.
+-- Order Part B by month.
+-- =============================================================================
+
+-- YOUR SOLUTION BELOW:
+

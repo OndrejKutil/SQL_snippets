@@ -1,0 +1,56 @@
+-- =============================================================================
+-- TASK 3: Rolling 7-Day Active Users per IDE (DAU/WAU)
+-- =============================================================================
+--
+-- CONTEXT:
+-- The Product Analytics team tracks engagement via daily/weekly active users.
+-- Their Power BI report uses pre-aggregated tables; the Tableau migration needs
+-- the raw SQL to be re-validated. This query feeds the engagement trends chart.
+--
+-- SCHEMA:
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ products                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ product_id         │ INT (PK)       │ Unique product identifier        │
+-- │ product_name       │ VARCHAR(100)   │ e.g. 'GoLand'                   │
+-- │ product_family     │ VARCHAR(50)    │ e.g. 'IDE'                      │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ usage_events                                                           │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ event_id           │ BIGINT (PK)    │ Unique event identifier          │
+-- │ user_id            │ INT (FK)       │ References users                 │
+-- │ product_id         │ INT (FK)       │ References products              │
+-- │ event_date         │ DATE           │ Day the event occurred           │
+-- │ event_type         │ VARCHAR(30)    │ 'session_start', 'file_open',    │
+-- │                    │                │ 'build_run', 'debug_start',      │
+-- │                    │                │ 'plugin_install'                 │
+-- │ session_duration_s │ INT            │ Session length in seconds        │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- SAMPLE ROWS:
+-- usage_events:
+--   (1, 842, 4, '2025-01-15', 'session_start', 3600)
+--   (2, 842, 4, '2025-01-15', 'build_run',     NULL)
+--   (3, 900, 4, '2025-01-15', 'session_start', 1800)
+--   (4, 842, 4, '2025-01-16', 'session_start', 7200)
+--
+-- TASK:
+-- For each product and each day in January 2025:
+--   1. Compute the DAU (distinct users with at least one event that day)
+--   2. Compute the rolling 7-day active users (WAU): distinct users who had
+--      at least one event in the current day or preceding 6 days (7-day window)
+--   3. Compute the DAU/WAU ratio (also called "stickiness"), rounded to 2
+--      decimal places
+--
+-- Return: product_name, event_date, dau, wau_7d, stickiness
+-- Order by product_name, event_date
+--
+-- HINT: You may need to first create a daily per-product user summary, then
+-- use window functions with a ROWS or RANGE frame. Be careful — WAU counts
+-- DISTINCT users over the window, not just sum of DAUs.
+-- =============================================================================
+
+-- YOUR SOLUTION BELOW:
+

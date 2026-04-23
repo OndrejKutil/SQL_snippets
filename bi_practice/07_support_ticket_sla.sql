@@ -1,0 +1,78 @@
+-- =============================================================================
+-- TASK 7: Support Ticket SLAs and Resolution Time Analysis
+-- =============================================================================
+--
+-- CONTEXT:
+-- The Customer Support team tracks SLA compliance using a Power BI report.
+-- The Tableau migration requires the underlying SQL to be rebuilt. The dashboard
+-- shows response/resolution time distributions, SLA breach rates, and trends
+-- by product and priority. Used in weekly ops meetings.
+--
+-- SCHEMA:
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ support_tickets                                                        │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ ticket_id          │ INT (PK)       │ Unique ticket identifier         │
+-- │ account_id         │ INT (FK)       │ References accounts              │
+-- │ product_id         │ INT (FK)       │ References products              │
+-- │ priority           │ VARCHAR(10)    │ 'critical', 'high', 'medium',    │
+-- │                    │                │ 'low'                            │
+-- │ category           │ VARCHAR(50)    │ 'bug', 'feature_request',        │
+-- │                    │                │ 'licensing', 'how_to',           │
+-- │                    │                │ 'performance'                    │
+-- │ created_at         │ TIMESTAMP      │ When the ticket was opened       │
+-- │ first_response_at  │ TIMESTAMP      │ When the first reply was sent    │
+-- │ resolved_at        │ TIMESTAMP      │ When the ticket was closed       │
+-- │ status             │ VARCHAR(20)    │ 'open', 'in_progress',           │
+-- │                    │                │ 'resolved', 'closed'             │
+-- │ assigned_team      │ VARCHAR(50)    │ e.g. 'IDE Support', 'Billing'    │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ sla_targets                                                            │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ priority           │ VARCHAR(10)    │ 'critical', 'high', etc.         │
+-- │ max_first_response │ INTERVAL       │ e.g. '1 hour', '4 hours'        │
+-- │ max_resolution     │ INTERVAL       │ e.g. '4 hours', '24 hours'      │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ products                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ product_id         │ INT (PK)       │ Unique product identifier        │
+-- │ product_name       │ VARCHAR(100)   │ e.g. 'Rider'                    │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- SAMPLE ROWS:
+-- support_tickets:
+--   (1, 10, 5, 'critical', 'bug', '2025-01-10 09:00:00', '2025-01-10 09:45:00',
+--    '2025-01-10 13:00:00', 'resolved', 'IDE Support')
+--   (2, 11, 5, 'low', 'how_to', '2025-01-10 10:00:00', '2025-01-11 14:00:00',
+--    '2025-01-12 09:00:00', 'closed', 'IDE Support')
+--
+-- sla_targets:
+--   ('critical', '1 hour',  '4 hours')
+--   ('high',     '4 hours', '24 hours')
+--   ('medium',   '8 hours', '72 hours')
+--   ('low',      '24 hours','168 hours')
+--
+-- TASK:
+-- For tickets created in Q1 2025 (Jan–Mar), compute per product and priority:
+--   - ticket_count: total tickets
+--   - avg_first_response_hrs: average time to first response in hours (1 decimal)
+--   - median_resolution_hrs: median time to resolution in hours (1 decimal)
+--     (use PERCENTILE_CONT(0.5) or equivalent)
+--   - p95_resolution_hrs: 95th percentile of resolution time (1 decimal)
+--   - sla_response_breach_pct: % of tickets where first_response_at exceeded
+--     the SLA target (round to 1 decimal)
+--   - sla_resolution_breach_pct: % of resolved/closed tickets where resolved_at
+--     exceeded the SLA target (round to 1 decimal)
+--
+-- Return: product_name, priority, ticket_count, avg_first_response_hrs,
+--         median_resolution_hrs, p95_resolution_hrs, sla_response_breach_pct,
+--         sla_resolution_breach_pct
+-- Order by product_name, priority (critical first, then high, medium, low).
+-- =============================================================================
+
+-- YOUR SOLUTION BELOW:
+

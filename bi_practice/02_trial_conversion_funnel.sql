@@ -1,0 +1,76 @@
+-- =============================================================================
+-- TASK 2: Trial-to-Paid Conversion Funnel
+-- =============================================================================
+--
+-- CONTEXT:
+-- The Growth team wants to move their conversion funnel dashboard from Power BI
+-- to Tableau. The key metric is trial-to-paid conversion rate segmented by
+-- product and region. This query feeds both the funnel chart and the heatmap.
+--
+-- SCHEMA:
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ products                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ product_id         │ INT (PK)       │ Unique product identifier        │
+-- │ product_name       │ VARCHAR(100)   │ e.g. 'WebStorm'                 │
+-- │ product_family     │ VARCHAR(50)    │ e.g. 'IDE', 'Team Tools'        │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ trials                                                                 │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ trial_id           │ INT (PK)       │ Unique trial identifier          │
+-- │ user_id            │ INT (FK)       │ References users                 │
+-- │ product_id         │ INT (FK)       │ References products              │
+-- │ trial_start_date   │ DATE           │ Start of the trial period        │
+-- │ trial_end_date     │ DATE           │ End of 30-day trial              │
+-- │ activation_source  │ VARCHAR(50)    │ 'website', 'ide_prompt',         │
+-- │                    │                │ 'email_campaign', 'partner'      │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ users                                                                  │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ user_id            │ INT (PK)       │ Unique user identifier           │
+-- │ email              │ VARCHAR(150)   │ User email                       │
+-- │ country            │ VARCHAR(60)    │ e.g. 'Germany', 'Japan'          │
+-- │ region             │ VARCHAR(30)    │ 'EMEA', 'APAC', 'Americas'      │
+-- │ account_type       │ VARCHAR(20)    │ 'individual', 'organization'     │
+-- │ signup_date        │ DATE           │ When they registered             │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ licenses                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ license_id         │ INT (PK)       │ Unique license identifier        │
+-- │ user_id            │ INT (FK)       │ References users                 │
+-- │ product_id         │ INT (FK)       │ References products              │
+-- │ license_type       │ VARCHAR(20)    │ 'new', 'renewal', 'upgrade'      │
+-- │ purchase_date      │ DATE           │ When the license was purchased   │
+-- │ amount_usd         │ DECIMAL(10,2)  │ Revenue in USD                   │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- SAMPLE ROWS:
+-- trials:
+--   (1, 200, 3, '2024-09-01', '2024-09-30', 'website')
+--   (2, 201, 3, '2024-09-05', '2024-10-04', 'ide_prompt')
+--
+-- licenses:
+--   (5001, 200, 3, 'new', '2024-09-28', 249.00)
+--
+-- TASK:
+-- For each product and region, calculate:
+--   - total_trials: count of trials started in Q3 2024 (Jul–Sep)
+--   - converted_trials: count of those trials where the SAME user bought
+--     a 'new' license for the SAME product within 45 days of trial_start_date
+--   - conversion_rate_pct: (converted_trials / total_trials) * 100, rounded
+--     to 1 decimal
+--   - avg_days_to_convert: average number of days between trial_start_date
+--     and purchase_date for converted trials, rounded to 0 decimals
+--
+-- Only include rows where total_trials >= 5.
+-- Order by conversion_rate_pct DESC.
+-- =============================================================================
+
+-- YOUR SOLUTION BELOW:
+

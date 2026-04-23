@@ -1,0 +1,63 @@
+-- =============================================================================
+-- TASK 4: Customer Retention Cohorts
+-- =============================================================================
+--
+-- CONTEXT:
+-- Finance and Customer Success teams need a cohort retention matrix for the
+-- Tableau migration. The existing Power BI report uses a custom DAX measure.
+-- You need to rebuild this in SQL so Tableau can use a direct connection.
+--
+-- SCHEMA:
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ accounts                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ account_id         │ INT (PK)       │ Unique account identifier        │
+-- │ company_name       │ VARCHAR(200)   │ e.g. 'Acme Corp'                │
+-- │ industry           │ VARCHAR(50)    │ 'Technology', 'Finance', etc.    │
+-- │ employee_count     │ INT            │ Company size                     │
+-- │ region             │ VARCHAR(30)    │ 'EMEA', 'APAC', 'Americas'      │
+-- │ first_purchase_date│ DATE           │ Date of very first purchase      │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ licenses                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ license_id         │ INT (PK)       │ Unique license identifier        │
+-- │ account_id         │ INT (FK)       │ References accounts              │
+-- │ product_id         │ INT (FK)       │ References products              │
+-- │ license_type       │ VARCHAR(20)    │ 'new', 'renewal', 'upgrade'      │
+-- │ purchase_date      │ DATE           │ When the license was purchased   │
+-- │ amount_usd         │ DECIMAL(10,2)  │ Revenue in USD                   │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- SAMPLE ROWS:
+-- accounts:
+--   (10, 'DataWave GmbH', 'Technology', 120, 'EMEA', '2023-03-10')
+--   (11, 'Nirvana Labs',  'Technology', 45,  'Americas', '2023-07-22')
+--
+-- licenses:
+--   (2001, 10, 1, 'new',     '2023-03-10', 499.00)
+--   (2002, 10, 1, 'renewal', '2024-03-09', 399.00)
+--   (2003, 10, 2, 'new',     '2023-06-15', 199.00)
+--   (2004, 11, 1, 'new',     '2023-07-22', 499.00)
+--
+-- TASK:
+-- Build a cohort retention table where:
+--   - Cohort is defined by the month of first_purchase_date (e.g. '2023-03')
+--   - For each cohort, count how many accounts made at least one purchase 
+--     (any license_type) in each subsequent month offset (month 0, 1, 2, ... 12)
+--   - Month 0 = same month as first_purchase_date
+--   - Month N = N months after the cohort month
+--
+-- Return:
+--   - cohort_month (e.g. '2023-03')
+--   - cohort_size (count of accounts in that cohort)
+--   - month_offset (0 through 12)
+--   - retained_accounts (count of accounts active in that offset month)
+--   - retention_rate_pct (retained / cohort_size * 100, rounded to 1 decimal)
+--
+-- Only include cohorts from 2023. Order by cohort_month, month_offset.
+-- =============================================================================
+
+-- YOUR SOLUTION BELOW:
+

@@ -1,0 +1,81 @@
+-- =============================================================================
+-- TASK 10: Product Adoption Journey — Multi-Product Expansion Paths
+-- =============================================================================
+--
+-- CONTEXT:
+-- The Strategy team wants to understand how customers expand across the JetBrains
+-- product portfolio. The Power BI report was static and limited. The new Tableau
+-- version should show the most common "adoption paths" — e.g., customers who
+-- start with IntelliJ IDEA and later adopt TeamCity. This helps drive cross-sell
+-- strategy and bundling decisions.
+--
+-- SCHEMA:
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ accounts                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ account_id         │ INT (PK)       │ Unique account identifier        │
+-- │ company_name       │ VARCHAR(200)   │ Company name                     │
+-- │ region             │ VARCHAR(30)    │ 'EMEA', 'APAC', 'Americas'      │
+-- │ segment            │ VARCHAR(20)    │ 'Enterprise', 'SMB', 'Individual'│
+-- │ first_purchase_date│ DATE           │ Date of first ever purchase      │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ products                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ product_id         │ INT (PK)       │ Unique product identifier        │
+-- │ product_name       │ VARCHAR(100)   │ e.g. 'IntelliJ IDEA Ultimate'   │
+-- │ product_family     │ VARCHAR(50)    │ 'IDE', 'Team Tools', '.NET'     │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- ┌─────────────────────────────────────────────────────────────────────────┐
+-- │ licenses                                                               │
+-- ├────────────────────┬────────────────┬──────────────────────────────────┤
+-- │ license_id         │ INT (PK)       │ Unique license identifier        │
+-- │ account_id         │ INT (FK)       │ References accounts              │
+-- │ product_id         │ INT (FK)       │ References products              │
+-- │ license_type       │ VARCHAR(20)    │ 'new', 'renewal', 'upgrade'      │
+-- │ purchase_date      │ DATE           │ When the license was purchased   │
+-- │ amount_usd         │ DECIMAL(10,2)  │ Revenue in USD                   │
+-- └────────────────────┴────────────────┴──────────────────────────────────┘
+--
+-- SAMPLE ROWS:
+-- accounts:
+--   (10, 'DataWave GmbH', 'EMEA', 'Enterprise', '2021-06-15')
+--
+-- products:
+--   (1, 'IntelliJ IDEA Ultimate', 'IDE')
+--   (5, 'TeamCity Cloud',         'Team Tools')
+--   (7, 'Rider',                  '.NET')
+--
+-- licenses:
+--   (3001, 10, 1, 'new',  '2021-06-15', 499.00)  -- started with IntelliJ
+--   (3002, 10, 1, 'renewal','2022-06-14', 399.00)
+--   (3003, 10, 5, 'new',  '2022-09-01', 299.00)  -- added TeamCity later
+--   (3004, 10, 7, 'new',  '2023-02-10', 349.00)  -- added Rider even later
+--
+-- TASK:
+-- Part A — First product adopted:
+-- For each account, find the FIRST product they ever purchased (earliest
+-- purchase_date with license_type = 'new'). Break ties by product_id.
+-- Return: account_id, company_name, segment, first_product_name, first_purchase_date
+--
+-- Part B — Product adoption sequence:
+-- For each account that adopted 2+ products, determine the order in which
+-- they adopted each product (by the first 'new' license date per product).
+-- Use STRING_AGG (or GROUP_CONCAT) to build an ordered adoption path string
+-- like 'IntelliJ IDEA → TeamCity → Rider'.
+-- Return: account_id, company_name, product_count, adoption_path
+-- Order by product_count DESC, account_id.
+--
+-- Part C — Most common expansion pairs:
+-- For every pair of products (product_A, product_B) where product_A was
+-- adopted BEFORE product_B by the same account, count how many accounts
+-- followed that path.
+-- Return the top 10 pairs: product_a_name, product_b_name, account_count,
+--   avg_days_between (average days from first adopting A to first adopting B)
+-- Order by account_count DESC.
+-- =============================================================================
+
+-- YOUR SOLUTION BELOW:
+
