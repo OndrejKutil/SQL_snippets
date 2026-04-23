@@ -83,9 +83,12 @@ WITH licenses_filtered AS (
     GROUP BY 1, 2
 )
 ,months AS (
-    SELECT GENERATE_SERIES('2024-01-01'::DATE
-                            ,'2025-12-01'::DATE
-                            ,'1 month'::INTERVAL)::DATE AS month
+    SELECT 
+        GENERATE_SERIES(
+            '2024-01-01'::DATE
+            ,'2025-12-01'::DATE
+            ,'1 month'::INTERVAL
+        )::DATE AS month
 )
 ,base_table AS (
     SELECT 
