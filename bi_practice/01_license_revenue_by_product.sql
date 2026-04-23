@@ -59,5 +59,60 @@
 
 -- YOUR SOLUTION BELOW:
 
-WITH monthly_revenue_per_product AS (
+WITH licenses_filtered AS (
+    SELECT *
+    FROM licenses
+    WHERE purchase_date >= '2024-01-01' AND purchase_date <= '2025-12-31'
+)
+,monthly_revenue_per_product AS (
+    SELECT 
+        p.product_id
+        ,DATE_TRUNC('month', l.purchase_date) AS "month_purchase_r"
+        ,SUM(l.amount_usd) AS "revenue"
+    FROM licenses_filtered l
+    JOIN products p ON p.product_id = l.product_id
+    GROUP BY 1, 2
+)
+,monthly_license_count_per_product AS (
+    SELECT 
+        p.product_id
+        ,DATE_TRUNC('month', l.purchase_date) AS "month_purchase_l"
+        ,COUNT(DISTINCT l.license_id) AS "license_count"
+    FROM licenses_filtered l
+    JOIN products p ON p.product_id = l.product_id
+    GROUP BY 1, 2
+)
+,months AS (
+    SELECT GENERATE_SERIES('2024-01-01'::DATE
+                            ,'2025-12-01'::DATE
+                            ,'1 month'::INTERVAL)::DATE AS month
+)
+,base_table AS (
+    SELECT 
+        m.month,
+        p.product_id,
+        p.product_name,
+        p.product_family
+    FROM months m
+    CROSS JOIN products p
+)
+SELECT
+    b.month
+    ,b.product_name
+    ,b.product_family
+    ,COALESCE(r.revenue, 0) AS "total_revenue" -- COALESCE to return 0 instead of NULL
+    ,COALESCE(l.license_count, 0) AS "license_count" -- COALESCE to return 0 instead of NULL
+    -- NULLIF(x, y) returns NULL if x = y
+    -- LAG() safely returns NULL if previous value is not found
+    ,((
+        COALESCE(r.revenue, 0)  
+        /
+        NULLIF(LAG(COALESCE(r.revenue, 0)) OVER (PARTITION BY b.product_id ORDER BY b.month), 0)
+    ) - 1) * 100 AS "mom_growth_pct"  -- multiply by 100 to get a percentage  
+FROM base_table b
+LEFT JOIN monthly_revenue_per_product r ON r.month_purchase_r = b.month AND r.product_id = b.product_id
+LEFT JOIN monthly_license_count_per_product l ON l.month_purchase_l = b.month AND l.product_id = b.product_id
+ORDER BY b.product_name, b.month
+
+
     
