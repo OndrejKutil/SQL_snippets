@@ -46,11 +46,60 @@
 --
 -- Return: product_name, event_date, dau, wau_7d, stickiness
 -- Order by product_name, event_date
---
--- HINT: You may need to first create a daily per-product user summary, then
--- use window functions with a ROWS or RANGE frame. Be careful — WAU counts
--- DISTINCT users over the window, not just sum of DAUs.
 -- =============================================================================
 
 -- YOUR SOLUTION BELOW:
+WITH jan_days AS (
+    SELECT 
+        GENERATE_SERIES(
+            '2025-01-01'::DATE,
+            '2025-01-31'::DATE,
+            '1 day'::INTERVAL
+        )::DATE AS "days"
+)
+,base_table AS (
+    SELECT d.days, p.product_id, p.product_name
+    FROM jan_days d
+    CROSS JOIN products p
+)
+,usage_events_filtered AS (
+    SELECT *
+    FROM usage_events
+    WHERE event_date::date BETWEEN '2025-01-01'::DATE AND '2025-01-31'::DATE
+)
+,dau AS (
+    SELECT
+        event_date
+        ,product_id
+        ,COUNT(DISTINCT user_id) AS "dau"
+    FROM usage_events_filtered
+    GROUP BY 1, 2
+)
+/* 
+Joining on the BETWEEN clause creates 7 rows per one day X product combination
+(Given all previous 6 days are present in the data)
+Then by group by we collapse it again to one row per the combination (combined with COUNT())
+ */
+,wau AS (
+    SELECT
+        b.days
+        ,b.product_id
+        ,COUNT(DISTINCT u.user_id) AS "wau_7d"
+    FROM base_table b
+    LEFT JOIN usage_events u ON b.product_id = u.product_id
+        AND u.event_date BETWEEN b.days - INTERVAL '6 days' AND b.days
+        -- casting to INTERVAL as many engines may not support just 'b.days - 6'
+    GROUP BY 1, 2
+)
+SELECT
+    b.product_name
+    ,b.days
+    ,COALESCE(d.dau, 0)
+    ,COALESCE(w.wau_7d, 0)
+    ,ROUND(COALESCE(d.dau * 100.0 / NULLIF(w.wau_7d, 0), 0), 2) AS "stickiness"
+    -- if we divide by 0, engine trows fatal error, if we divide by NULL, engine evaluates it to NULL
+FROM base_table b
+LEFT JOIN dau d ON d.event_date = b.days AND d.product_id = b.product_id
+LEFT JOIN wau w ON w.event_date = b.days AND w.product_id = b.product_id
+ORDER BY 1, 2
 
