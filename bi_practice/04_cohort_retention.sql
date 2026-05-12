@@ -60,4 +60,65 @@
 -- =============================================================================
 
 -- YOUR SOLUTION BELOW:
-
+WITH base_table AS (
+    SELECT
+        TO_CHAR(cohort_month, 'YYYY-MM') AS "cohort_month",
+        month_offset
+    FROM 
+        GENERATE_SERIES(
+            '2023-01-01'::TIMESTAMP,
+            '2023-12-01'::TIMESTAMP,
+            '1 month'::INTERVAL
+        ) AS cohort_month
+    CROSS JOIN 
+        GENERATE_SERIES(0, 12, 1) AS month_offset
+)
+,accounts_limited_to_2023 AS (
+    SELECT
+        account_id
+        ,first_purchase_date
+        ,TO_CHAR(first_purchase_date, 'YYYY-MM') AS "year_month"
+    FROM accounts
+    WHERE first_purchase_date BETWEEN '2023-01-01'::DATE AND '2023-12-31'::DATE
+)
+,cohort_sizes AS (
+    SELECT 
+        COUNT(DISTINCT account_id) AS "cohort_size"
+        ,year_month
+    FROM accounts_limited_to_2023
+    GROUP BY year_month
+)
+,enhanced_base_table AS (
+    SELECT 
+        b.cohort_month
+        ,c.cohort_size
+        ,b.month_offset
+    FROM base_table b
+    LEFT JOIN cohort_sizes c ON c.year_month = b.cohort_month
+)
+,activity AS (
+    SELECT 
+        a.account_id
+        ,a.first_purchase_date
+        ,a.year_month
+        ,(EXTRACT(YEAR FROM l.purchase_date) - EXTRACT(YEAR FROM a.first_purchase_date)) * 12 + (EXTRACT(MONTH FROM l.purchase_date) - EXTRACT(MONTH FROM a.first_purchase_date)) AS "offset_mon"
+    FROM accounts_limited_to_2023 a
+    LEFT JOIN licenses l ON l.account_id = a.account_id
+)
+,aggregated_activity AS (
+    SELECT
+        year_month
+        ,offset_mon
+        ,COUNT(DISTINCT account_id) AS "retained_accounts"
+    FROM activity
+    GROUP BY year_month, offset_mon
+)
+SELECT
+    b.cohort_month
+    ,COALESCE(b.cohort_size, 0) AS "cohort_size"
+    ,b.month_offset
+    ,COALESCE(a.retained_accounts, 0) AS "retained_accounts"
+    ,ROUND(COALESCE((a.retained_accounts * 100.0) / NULLIF(b.cohort_size, 0), 0), 1) AS "retention_rate_pct"
+FROM enhanced_base_table b
+LEFT JOIN aggregated_activity a ON b.cohort_month = a.year_month AND b.month_offset = a.offset_mon
+ORDER BY 1, 3 
