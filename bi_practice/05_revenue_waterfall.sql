@@ -65,3 +65,63 @@
 
 -- YOUR SOLUTION BELOW:
 
+/*
+First query
+*/
+WITH both_year_revenues AS (
+    SELECT
+        a.account_id
+        ,a.company_name
+        ,a.region
+        ,a.segment
+        ,COALESCE(r2023.total_revenue_usd, 0) AS "revenue_2023"
+        ,COALESCE(r2024.total_revenue_usd, 0) AS "revenue_2024"
+    FROM accounts a
+    LEFT JOIN annual_revenue r2023 ON a.account_id = r2023.account_id AND r2023.fiscal_year = 2023
+    LEFT JOIN annual_revenue r2024 ON a.account_id = r2024.account_id AND r2024.fiscal_year = 2024
+)
+,categories AS (
+    SELECT
+        account_id
+        ,company_name
+        ,region
+        ,segment
+        ,revenue_2023
+        ,revenue_2024
+        ,CASE
+            WHEN revenue_2023 = 0 AND revenue_2024 <> 0 THEN 'New'
+            WHEN revenue_2023 <> 0 AND revenue_2024 = 0 THEN 'Churned'
+            WHEN revenue_2023 <> 0 AND revenue_2024 <> 0 AND revenue_2023 = revenue_2024 THEN 'Flat'
+            WHEN revenue_2023 <> 0 AND revenue_2024 <> 0 AND revenue_2023 > revenue_2024 THEN 'Contraction'
+            WHEN revenue_2023 <> 0 AND revenue_2024 <> 0 AND revenue_2023 < revenue_2024 THEN 'Expansion'
+            ELSE 'Unknown'
+        END AS "revenue_category"
+    FROM both_year_revenues
+)
+SELECT
+    revenue_category
+    ,COUNT(DISTINCT account_id) AS "account_count"
+    ,SUM(revenue_2023) AS "revenue_2023"
+    ,SUM(revenue_2024) AS "revenue_2024"
+    ,SUM(revenue_2024) - SUM(revenue_2023) AS "net_change"
+FROM categories
+WHERE revenue_category <> 'Unknown'
+GROUP BY revenue_category;
+
+/*
+Second query
+Needs the same CTEs again repeated, but for simplicity not repeated here
+CTEs only live until the next ";"
+*/
+SELECT
+    company_name
+    ,region
+    ,segment
+    ,revenue_2023
+    ,revenue_2024
+    ,revenue_2024 - revenue_2023 AS "net_change"
+    ,revenue_category
+FROM categories
+WHERE revenue_category <> 'Unknown'
+ORDER BY ABS(net_change) DESC
+LIMIT 10;
