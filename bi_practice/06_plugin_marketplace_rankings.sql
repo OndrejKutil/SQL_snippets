@@ -74,4 +74,38 @@
 -- =============================================================================
 
 -- YOUR SOLUTION BELOW:
+WITH plugin_stats AS (
+    SELECT
+        p.plugin_id
+        ,COUNT(DISTINCT d.download_id) AS "total_downloads"
+        ,ROUND(AVG(r.rating), 2) AS "avg_rating"
+        ,COUNT(DISTINCT r.rating_id) AS "rating_count"
+        ,COUNT(
+            DISTINCT
+            CASE
+                WHEN d.download_date BETWEEN '2025-03-31'::DATE - INTERVAL '90 days' AND '2025-03-31' THEN d.download_id
+            END
+        ) AS "downloads_last_90d"
 
+    FROM plugins p
+    LEFT JOIN plugin_downloads d ON d.plugin_id = p.plugin_id
+    LEFT JOIN plugin_ratings r ON p.plugin_id = r.plugin_id
+    GROUP BY 1
+)
+SELECT
+    p.plugin_name
+    ,p.vendor_name
+    ,p.category
+    ,p.is_paid
+    ,s.total_downloads
+    ,s.downloads_last_90d
+    ,s.avg_rating
+    ,s.rating_count
+    ,DENSE_RANK() OVER (ORDER BY total_downloads DESC) AS "download_rank"
+    ,ROUND(
+        PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_downloads)
+        , 2) AS "download_percentile"
+FROM plugin_stats s
+LEFT JOIN plugins p ON s.plugin_id = p.plugin_id
+WHERE s.total_downloads >= 10 AND s.rating_count >= 3
+ORDER BY s.total_downloads DESC
